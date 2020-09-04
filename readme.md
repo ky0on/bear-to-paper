@@ -4,20 +4,6 @@ I really liked Bear, but I also sometimes need to access notes on other
 computers.  This tool will migrate exported Bear (markdown format)
 notes into Paper.
 
-## Install
-
-Install from PyPi:
-
-```
-pip install bear-to-paper
-```
-
-or from a clone of this repository:
-
-```
-pip install .
-```
-
 ## Instructions
 
 First, you'll need to get a Dropbox access token:
@@ -33,9 +19,7 @@ First, you'll need to get a Dropbox access token:
 
 Then, you can migrate your notes:
 
+```sh
+export DROPBOX_API=YOUR_KEY
+python cmdline.py /path/to/exported/markdown/files
 ```
-bear-to-paper /path/to/exported/markdown/file
-```
-
-Enter your Dropbox Access Token when asked, and wait for your notes and
-their attachments to be uploaded and converted into Paper documents.
