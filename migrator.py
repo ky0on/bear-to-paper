@@ -92,7 +92,7 @@ class Migrator(object):
             # Convert hyperlinks
             befores = [f'{bear_name}/{asset_key}', asset_key]
             for before in befores:
-                before = quote(before, safe='/()')
+                before = quote(before, safe='/(),')
                 after = asset_meta.url
                 # print(f'Replacing hyperlink: {before} ---> {after}')
                 converted_markdown = converted_markdown.replace(before, after)
@@ -100,7 +100,7 @@ class Migrator(object):
             # Convert images
             befores = [quote(f'{bear_name}/{asset_key}')]
             for before in befores:
-                before = quote(before, safe='/()')
+                before = quote(before, safe='/(),')
                 after = asset_meta.url
                 # print(f'Replacing image: {before} ---> {after}')
                 converted_markdown = converted_markdown.replace(before, after)
@@ -127,8 +127,11 @@ class Migrator(object):
                 reader.get_name(),
                 uploaded_asset_map,
             )
-            # with open('tmp.md', 'w') as fp:
-            #     fp.write(transformed_markdown)
+
+            local_md_path = os.path.join('/tmp', os.path.basename(path))
+            with open(local_md_path, 'w') as fp:
+                fp.write(transformed_markdown)
+            print('Saved as', local_md_path)
 
             # Create paper
             self.dropbox.paper_docs_create(
