@@ -2,13 +2,15 @@ import io
 import logging
 import os
 import re
+from uuid import uuid4
 from typing import Dict, List, Text
+from urllib.parse import quote
 
 from dropbox.dropbox import Dropbox
 from dropbox.sharing import SharedLinkMetadata
 from dropbox.paper import ImportFormat
 
-from .reader import Reader
+from reader import Reader
 
 
 logger = logging.getLogger(__name__)
@@ -43,15 +45,17 @@ class Migrator(object):
         uploaded_assets: Dict[Text, SharedLinkMetadata] = {}
 
         for asset_key, asset_path in asset_map.items():
-            logger.info(
-                "Uploading %s",
-                asset_key,
-            )
+
+            ext = os.path.splitext(asset_key)[-1]
+            asset_key_uuid = str(uuid4()) + ext
+
+            logger.info("Uploading %s", asset_key_uuid)
             dropbox_path = '/' + '/'.join([
                 self._upload_folder,
-                document_name,
-                asset_key,
+                # document_name,
+                asset_key_uuid,
             ])
+
             with io.open(asset_path, 'rb') as inf:
                 self.dropbox.files_upload(
                     inf.read(),
@@ -63,11 +67,9 @@ class Migrator(object):
                         dropbox_path,
                     )
                 )
-                logger.debug(
-                    "Asset available at URL %s",
-                    sharing_meta.url,
-                )
+                logger.debug("Asset available at URL %s", sharing_meta.url)
 
+                # asset_key_fullpath = os.path.join(document_name, asset_key)
                 uploaded_assets[asset_key] = sharing_meta
 
         return uploaded_assets
@@ -86,46 +88,49 @@ class Migrator(object):
         )
 
         for asset_key, asset_meta in uploaded_asset_map.items():
+
             # Convert hyperlinks
-            converted_markdown = re.sub(
-                r"<a href='%s'>.*?</a>" % re.escape(asset_key),
-                asset_meta.url,
-                converted_markdown
-            )
+            befores = [f'{bear_name}/{asset_key}', asset_key]
+            for before in befores:
+                before = quote(before, safe='/()')
+                after = asset_meta.url
+                # print(f'Replacing hyperlink: {before} ---> {after}')
+                converted_markdown = converted_markdown.replace(before, after)
+
             # Convert images
-            converted_markdown = re.sub(
-                r'\!\[\]\(%s\)' % re.escape(
-                    '/'.join([
-                        bear_name,
-                        asset_key,
-                    ])
-                ),
-                '![]({url})'.format(url=asset_meta.url),
-                converted_markdown,
-            )
+            befores = [quote(f'{bear_name}/{asset_key}')]
+            for before in befores:
+                before = quote(before, safe='/()')
+                after = asset_meta.url
+                # print(f'Replacing image: {before} ---> {after}')
+                converted_markdown = converted_markdown.replace(before, after)
 
         return converted_markdown
 
     def migrate(self) -> None:
         for path in self._paths:
-            logger.info(
-                "Migrating %s",
-                path,
-            )
+            logger.info("Migrating %s", path)
 
             reader = Reader(path)
             bear_markdown = reader.get_markdown()
             bear_assets = reader.get_asset_map()
 
+            # Upload assets
             uploaded_asset_map = self._upload_assets(
                 bear_assets,
                 reader.get_name(),
             )
+
+            # Transform markdown
             transformed_markdown = self._convert_markdown(
                 bear_markdown,
                 reader.get_name(),
                 uploaded_asset_map,
             )
+            # with open('tmp.md', 'w') as fp:
+            #     fp.write(transformed_markdown)
+
+            # Create paper
             self.dropbox.paper_docs_create(
                 transformed_markdown.encode('utf-8'),
                 import_format=ImportFormat.markdown,
