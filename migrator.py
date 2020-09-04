@@ -81,11 +81,7 @@ class Migrator(object):
         uploaded_asset_map: Dict[Text, SharedLinkMetadata]
     ) -> Text:
         # First, rewrite tags that happen to have slashes:
-        converted_markdown = re.sub(
-            r'#(\w+)\/(\w+)\W',
-            r'#\1_\2',
-            bear_markdown,
-        )
+        converted_markdown = re.sub(r'#(\w+)\/(\w+)', r'#\1_\2', bear_markdown)
 
         for asset_key, asset_meta in uploaded_asset_map.items():
 
