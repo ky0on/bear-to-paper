@@ -2,34 +2,26 @@ import argparse
 from getpass import getpass
 import logging
 import sys
-from typing import List, Text
+import os
 
-from .migrator import Migrator
+from migrator import Migrator
 
 
-def main(args: List[Text] = None):
-    if args is None:
-        args = sys.argv[1:]
+if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('documents', nargs='+')
-    parser.add_argument(
-        '--upload-folder',
-        default='Note Assets'
-    )
-    parser.add_argument(
-        '--log-level',
-        default='INFO'
-    )
-    options = parser.parse_args(args)
+    parser.add_argument('--upload-folder', default='Paper Assets')
+    parser.add_argument('--log-level', default='INFO')
+    args = parser.parse_args()
 
     root_logger = logging.getLogger('bear_to_paper')
     stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setLevel(logging.getLevelName(options.log_level))
+    stream_handler.setLevel(logging.getLevelName(args.log_level))
     root_logger.addHandler(stream_handler)
-    root_logger.setLevel(logging.getLevelName(options.log_level))
+    root_logger.setLevel(logging.getLevelName(args.log_level))
 
     access_token = getpass(prompt="Dropbox Access Token: ")
 
-    migrator = Migrator(options.documents, access_token, options.upload_folder)
+    migrator = Migrator(args.documents, access_token, args.upload_folder)
     migrator.migrate()
