@@ -1,5 +1,4 @@
 import argparse
-from getpass import getpass
 import logging
 import sys
 import os
@@ -21,7 +20,7 @@ if __name__ == '__main__':
     root_logger.addHandler(stream_handler)
     root_logger.setLevel(logging.getLevelName(args.log_level))
 
-    access_token = getpass(prompt="Dropbox Access Token: ")
+    access_token = os.environ['DROPBOX_API']
 
     migrator = Migrator(args.documents, access_token, args.upload_folder)
     migrator.migrate()
